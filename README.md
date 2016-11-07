@@ -1,4 +1,31 @@
-# Caffe
+
+This branch is developed for foodIngredients recognition.
+
+* [Updates](#updates)
+* [Changed Files](#files)
+* [Caffe_Read](#caffe)
+
+<h3 id="updates"> Updates </h3>
+
+* Nov 7, 2016
+  * codes for multi-labels, reference--[Caffe 源码添加多标签](http://blog.csdn.net/chunxia75qin/article/details/50470269)
+
+<h3 id="files"> Changed Files </h3>
+
+* multi-labels
+	*  include/caffe/layers/image_data_layer.hpp
+	*  include/caffe/layers/memory_data_layer.hpp
+    *  include/caffe/util/io.hpp
+    *  src/caffe/data_transformer.cpp
+    *  src/caffe/layers/data_layer.cpp
+    *  src/caffe/layers/image_data_layer.cpp
+    *  src/caffe/layers/memory_data_layer.cpp
+    *  src/caffe/proto/caffe.proto
+    *  src/caffe/util/io.cpp
+    *  tools/convert_imageset.cpp
+
+
+<h3 id="caffe"> Caffe_Read </h3>
 
 [![Build Status](https://travis-ci.org/BVLC/caffe.svg?branch=master)](https://travis-ci.org/BVLC/caffe)
 [![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)
