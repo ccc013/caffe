@@ -30,7 +30,7 @@
 
 reset
 set terminal png
-set output "your_chart_name.png"
+set output "lmdb_small_result.png"
 set style data lines
 set key right
 
@@ -38,10 +38,10 @@ set key right
 ###### Iters Seconds TrainingLoss LearningRate
 
 # Training loss vs. training iterations
-set title "Training loss vs. training iterations"
-set xlabel "Training iterations"
-set ylabel "Training loss"
-plot "mnist.log.train" using 1:3 title "mnist"
+# set title "Training loss vs. training iterations"
+# set xlabel "Training iterations"
+# set ylabel "Training loss"
+# plot "/home/cai/dataset/facialExpression/plot_result/caffe_train_facialExpression_top1_lmdb_xavier.txt.train" using 1:3 title "facialExpression"
 
 # Training loss vs. training time
 # plot "mnist.log.train" using 2:3 title "mnist"
@@ -60,7 +60,10 @@ plot "mnist.log.train" using 1:3 title "mnist"
 # plot "mnist.log.test" using 1:4 title "mnist"
 
 # Test accuracy vs. training iterations
-# plot "mnist.log.test" using 1:3 title "mnist"
+set title "Test accuracy vs. training iterations"
+set ylabel "Test accuracy"
+set xlabel "Training iterations"
+plot "/home/cai/dataset/foodIngredients-68/plot_result/caffe_train_foodIngredients68_top1_train_lmdb_128.txt.test" using 1:3 title "foodIngredients"
 
 # Test loss vs. training time
 # plot "mnist.log.test" using 2:4 title "mnist"

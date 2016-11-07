@@ -47,6 +47,11 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   const int datum_width = datum.width();
 
   const int crop_size = param_.crop_size();
+
+  //new 
+  const int crop_height = param_.crop_height();
+  const int crop_width = param_.crop_width();
+
   const Dtype scale = param_.scale();
   const bool do_mirror = param_.mirror() && Rand(2);
   const bool has_mean_file = param_.has_mean_file();
@@ -56,6 +61,9 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   CHECK_GT(datum_channels, 0);
   CHECK_GE(datum_height, crop_size);
   CHECK_GE(datum_width, crop_size);
+  // new
+  CHECK_GE(datum_height, crop_height);
+  CHECK_GE(datum_width, crop_width);
 
   Dtype* mean = NULL;
   if (has_mean_file) {
@@ -92,6 +100,22 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
       w_off = (datum_width - crop_size) / 2;
     }
   }
+
+  // new: to crop data with rectangular window
+  if (crop_height && crop_width) {
+    height = crop_height;
+    width = crop_width;
+    // We only do random crop when we do training.
+    if (phase_ == TRAIN) {
+      h_off = Rand(datum_height - crop_height + 1);
+      w_off = Rand(datum_width - crop_width + 1);
+    } else {
+      h_off = (datum_height - crop_height) / 2;
+      w_off = (datum_width - crop_width) / 2;
+    }
+  }
+
+
 
   Dtype datum_element;
   int top_index, data_index;
@@ -522,7 +546,7 @@ vector<int> DataTransformer<Dtype>::InferBlobShape(
 template <typename Dtype>
 void DataTransformer<Dtype>::InitRand() {
   const bool needs_rand = param_.mirror() ||
-      (phase_ == TRAIN && param_.crop_size());
+      (phase_ == TRAIN && param_.crop_size()) || (phase_ == TRAIN && param_.crop_width() && param_.crop_height());
   if (needs_rand) {
     const unsigned int rng_seed = caffe_rng_rand();
     rng_.reset(new Caffe::RNG(rng_seed));

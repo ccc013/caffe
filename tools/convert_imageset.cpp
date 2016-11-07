@@ -72,12 +72,31 @@ int main(int argc, char** argv) {
   const string encode_type = FLAGS_encode_type;
 
   std::ifstream infile(argv[2]);
-  std::vector<std::pair<std::string, int> > lines;
+  //std::vector<std::pair<std::string, int> > lines;
+  
+  // for multiLabel
+  std::vector<std::pair<std::string, std::vector<int> > > lines;
   std::string filename;
+
+  std::string line;
+  while(std::getline(infile, line)){
+    int label;
+    std::istringstream iss(line);
+    iss >> filename;
+    std::vector<int> labels;
+    while(iss >> label){
+      labels.push_back(label);
+    }
+    lines.push_back(std::make_pair(filename, labels));
+  }
+  /*
   int label;
+//  plt.subplot(211)
   while (infile >> filename >> label) {
     lines.push_back(std::make_pair(filename, label));
-  }
+  }*/
+
+
   if (FLAGS_shuffle) {
     // randomly shuffle data
     LOG(INFO) << "Shuffling data";
