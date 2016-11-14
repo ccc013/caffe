@@ -53,11 +53,11 @@ class BipartiteGraphLossLayer : public LossLayer<Dtype>{
     int inner_num_coarse;
     int softmax_axis_;
     // scale is an intermediate Blob to hold temporary results.
-    Blob<Dtype> scale_fine, scale_coarse;
+    Blob<Dtype> scale_fine_, scale_coarse_;
     // prob stores the output probability predictions for fine-gained label
-    Blob<Dtype> prob_y_;
+    Blob<Dtype> prob_f_, prob_f_temp_;
     // prob stores the output probability predictions for coarse class label
-    Blob<Dtype> prob_m_;
+    Blob<Dtype> prob_c_;
     // 
     // Blob<Dtype> prob_w_;
     // whether to ignore instances with a certain label.
@@ -65,7 +65,7 @@ class BipartiteGraphLossLayer : public LossLayer<Dtype>{
     // The label indicating that an instance should be ignored.
     int ignore_label_;
     // sum_multiplier is used to carry out sum using BLAS
-    Blob<Dtype> sum_multiplier_;
+    Blob<Dtype> sum_multiplier_fine_, sum_multiplier_coarse_;
 
 
 
