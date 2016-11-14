@@ -115,8 +115,7 @@ void BipartiteGraphLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bot
 
 	caffe_copy(bottom[0]->count(), bottom_data_fine, fine_data);
 	caffe_copy(bottom[1]->count(), bottom_data_coarse, coarse_data);
-
-	Dtype loss_fine = 0, loss_coarse = 0;
+	caffe_copy(bottom[1]->count(), bottom_data_coarse, prob_c_data);
 
 	// We need to subtract the max to avoid numerical issues, compute the exp,
     // and then normalize.	
@@ -138,10 +137,10 @@ void BipartiteGraphLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bot
     	// exponentiation, exp(f_j)
     	caffe_exp<Dtype>(dim_coarse, coarse_data, coarse_data);
     	// compute temp = \prod_{l=1}^m f_l
-    	Dtype temp = 1;
-    	for (int j = 0; j < channels_coarse; j++){
-    		temp *= coarse_data[i * dim_coarse + j];
-    	}
+    	// Dtype temp = 1;
+    	// for (int j = 0; j < channels_coarse; j++){
+    	// 	temp *= coarse_data[i * dim_coarse + j];
+    	// }
 
     	// compute f_j = g_cj * exp(f_j)
     	caffe_mul<Dtype>(dim_coarse, coarse_label, coarse_data, coarse_data);
@@ -167,7 +166,8 @@ void BipartiteGraphLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bot
     	caffe_exp<Dtype>(dim_fine, fine_data, fine_data);
     	// compute temp_ * exp(f_i)
     	caffe_scal<Dtype>(dim_fine, temp_, fine_data);
-
+    	// compute g_cj * exp(f_i)
+    	// caffe_mul<Dtype>()
 
     	// sum after exp, z = 1 + exp(f_i) * temp_
     	caffe_cpu_gemv<Dtype>(CblasNoTrans, channels_fine, inner_num_fine, temp_,
@@ -183,16 +183,92 @@ void BipartiteGraphLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bot
 	}
 
 	// compute loss
-
-
-	
-    
+	Dtype loss_fine = 0, loss_coarse = 0;
+	const Dtype* prob_fine_data = prob_f_.cpu_data();
+	int count = 0;
+	for (int i = 0; i < outer_num_; i++) {
+		for (int j = 0; j < inner_num_fine; j++){
+			const int label_value = static_cast<int>(fine_label[i * inner_num_fine + j]);
+			if (has_ignore_label_ && label_value == ignore_label_){
+				continue;
+			}
+			DCHECK_GE(label_value, 0);
+			DCHECK_LT(label_value, bottom[0]->shape(softmax_axis_));
+			// compute -log(fine_data[label])
+			loss_fine -= log(std::max(prob_fine_data[i * dim_fine + label_value * inner_num_fine + j],
+									  Dtype(FLT_MIN)));
+			++count;
+		}
+	}
+	top[0]->mutable_cpu_data()[0] = loss / count;
+	if(top.size() == 2){
+		top[1]->ShareData(prob_f_);
+	}
 }
 
 template <typename Dtype>
 void BipartiteGraphLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom){
 
+	if (propagate_down[2] || propagate_down[3]) {
+    LOG(FATAL) << this->type()
+               << " Layer cannot backpropagate to label inputs.";
+    }
+    // compute fine_data gradient
+    if (propagate_down[0]) {
+    	Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+    	const Dtype* prob_data = prob_f_.cpu_data();
+    	// copy the prob to input blob diff
+    	caffe_copy(prob_.count(), prob_data, bottom_diff);
+    	const Dtype* label = bottom[2]->cpu_data();
+    	int dim = prob_f_.count() / outer_num_;
+    	int count = 0;
+    	for (int i = 0; i < outer_num_; i++) {
+    		for (int j = 0; j < inner_num_fine; j++){
+    			const int label_value = static_cast<int>(fine_label[i * inner_num_fine + j]);
+    			if (has_ignore_label_ && label_value == ignore_label_) {
+          			for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
+            		  bottom_diff[i * dim + c * inner_num_fine + j] = 0;
+                    }
+        		} else {
+        			for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {	
+        				bottom_diff[i * dim + label_value * inner_num_fine + j] = (label_value == c)? 
+        											(1 - prob_data[i * dim + label_value * inner_num_fine + j]) : (-prob_data[i * dim + label_value * inner_num_fine + j]);
+          				++count;
+        			}
+        		}
+    		}
+    	}
+    	// Scale gradient
+    	Dtype loss_weight = top[0]->cpu_diff()[0] / count;
+    	caffe_scal(prob_.count(), loss_weight, bottom_diff);
+    }
+    // compute coarse-class gradient
+    if (propagate_down[1]) {
+    	Dtype* bottom_diff = bottom[1]->mutable_cpu_diff();
+    	const Dtype* prob_data = prob_f_.cpu_data();
+    	// copy the prob to input blob diff
+    	caffe_copy(prob_.count(), prob_data, bottom_diff);
+    	const Dtype* label = bottom[3]->cpu_data();
+    	int dim = prob_f_.count() / outer_num_;
+    	int count = 0;
+    	for (int i = 0; i < outer_num_; i++) {
+    		for (int j = 0; j < inner_num_coarse; j++){
+    			const int label_value = static_cast<int>(fine_label[i * inner_num_coarse + j]);
+    			if (label_value == 0) {
+          			for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
+            		  bottom_diff[i * dim + c * inner_num_coarse + j] = 0;
+                    }
+        		} else {
+          			bottom_diff[i * dim + label_value * inner_num_coarse + j] -= 1;
+          			++count;
+        		}
+    		}
+    	}
+    	// Scale gradient
+    	Dtype loss_weight = top[0]->cpu_diff()[0] / count;
+    	caffe_scal(prob_.count(), loss_weight, bottom_diff);
+    }
 }
 
 #ifdef CPU_ONLY
