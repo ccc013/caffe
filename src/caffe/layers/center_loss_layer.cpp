@@ -8,7 +8,7 @@ namespace caffe {
 
 template <typename Dtype>
 void CenterLossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top){
+      const vector<Blob<Dtype>*>& top) {
 	
 	const int num_output = this->layer_param_.center_loss_param().num_output();
 	N_ = num_output;
@@ -36,21 +36,38 @@ void CenterLossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     }  // parameter initialization
     this->param_propagate_down_.resize(this->blobs_.size(), true);
 
+    withSoftmax_ = this->layer_param_.center_loss_param().with_softmax();
+    if (withSoftmax_){
+    	// need to compute SoftmaxWithLoss
+    	LayerParameter softmax_loss_param(this->layer_param_);
+    	softmax_loss_param.set_type("SoftmaxWithLoss");
+    	// create SoftmaxWithLossLayer
+    	softmax_loss_layer_ = LayerRegistry<Dtype>::CreateLayer(softmax_loss_param);
+    	softmax_bottom_vec_.clear();
+  		softmax_bottom_vec_.push_back(bottom[0]);
+  		softmax_top_vec_.clear();
+  		softmax_top_vec_.push_back(&softmax_loss_);
+  		softmax_loss_layer_->SetUp(softmax_bottom_vec_, softmax_top_vec_);
+    }
+
 }
 
 template <typename Dtype>
 void CenterLossLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top){
+      const vector<Blob<Dtype>*>& top) {
 	
 	CHECK_EQ(bottom[1]->channels(), 1);
 	CHECK_EQ(bottom[1]->height(), 1);
 	CHECK_EQ(bottom[1]->width(), 1);
 	M_ = bottom[0]->num();
 	// The top shape will be the bottom shape with the flattened axes dropped,
-  // and replaced by a single axis with dimension num_output (N_).
-  LossLayer<Dtype>::Reshape(bottom, top);
-  distance_.ReshapeLike(*bottom[0]);
-  variation_sum_.ReshapeLike(*this->blobs_[0]);
+  	// and replaced by a single axis with dimension num_output (N_).
+  	LossLayer<Dtype>::Reshape(bottom, top);
+  	distance_.ReshapeLike(*bottom[0]);
+  	variation_sum_.ReshapeLike(*this->blobs_[0]);
+  	if (withSoftmax_) {
+  		softmax_loss_layer_->Reshape(softmax_bottom_vec_, softmax_top_vec_);
+  	}
 }
 
 template <typename Dtype>
@@ -71,6 +88,16 @@ void CenterLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	// compute D^2
 	Dtype dot = caffe_cpu_dot(M_ * K_, distance_.cpu_data(), distance_.cpu_data());
 	Dtype loss = dot / M_ / Dtype(2);
+
+	// compute softmaxLoss
+	if (withSoftmax_) {
+		softmax_loss_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
+		lambda_ = this->layer_param_.center_loss_param().lambdas();
+		// get the softmaxLoss
+		const Dtype* softmaxLoss = softmax_loss_.cpu_data();
+		loss = (*softmaxLoss) + lambda_ * loss;
+	}
+
 	// save the loss
 	top[0]->mutable_cpu_data()[0] = loss;
 
@@ -102,11 +129,27 @@ void CenterLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 			caffe_axpy(K_, (Dtype)1./(count + (Dtype)1.), variation_sum_data + n * K_, center_diff + n * K_);
 		}
 	}
+
+	lambda_ = this->layer_param_.center_loss_param().lambdas();
+	Dtype* centerLoss_diff;
+	Dtype* softmaxLoss_diff;
+
 	// Gradient with respect to bottom data
 	if(propagate_down[0]){
-		caffe_copy(M_ * K_, distance_.cpu_data(), bottom[0]->mutable_cpu_diff());
-		caffe_scal(M_ * K_, top[0]->cpu_diff()[0] / M_, bottom[0]->mutable_cpu_diff());
+		// caffe_copy(M_ * K_, distance_.cpu_data(), bottom[0]->mutable_cpu_diff());
+		caffe_copy(M_ * K_, distance_.cpu_data(), centerLoss_diff);
+		// caffe_scal(M_ * K_, lambda_ * top[0]->cpu_diff()[0] / M_, bottom[0]->mutable_cpu_diff());
+		caffe_scal(M_ * K_, top[0]->cpu_diff()[0] / M_, centerLoss_diff);
 	}
+	// compute softmaxLoss
+	if (withSoftmax_) { 
+		softmax_loss_layer_->Backward(softmax_top_vec_, propagate_down, softmax_bottom_vec_);
+		softmaxLoss_diff = bottom[0]->mutable_cpu_diff();
+		caffe_axpy<Dtype>(M_ * K_, lambda_, centerLoss_diff, softmaxLoss_diff);
+	} else {
+		caffe_copy(M_ * K_, centerLoss_diff, bottom[0]->mutable_cpu_diff());
+	}
+
 	if(propagate_down[1]){
 		LOG(FATAL) << this->type()
 				   << " Layer cannot backpropagate to label inputs.";

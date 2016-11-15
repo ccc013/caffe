@@ -8,12 +8,16 @@
 #include "caffe/proto/caffe.pb.h"
 
 #include "caffe/layers/loss_layer.hpp"
+#include "caffe/layers/softmax_loss_layer.hpp"
 
 namespace caffe {
 
 template <typename Dtype>
 class CenterLossLayer : public LossLayer<Dtype> {
  public:
+  /*
+  * @brief compute centerLoss, if set withSoftmax = true, also plus SoftmaxWithLoss.
+  */
   explicit CenterLossLayer(const LayerParameter& param)
       : LossLayer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
@@ -41,6 +45,19 @@ class CenterLossLayer : public LossLayer<Dtype> {
   
   Blob<Dtype> distance_;
   Blob<Dtype> variation_sum_;
+
+  // lambda
+  float lambda_;
+  bool withSoftmax_;
+
+  // SoftmaxWithLossLayer to compute SoftmaxWithLoss
+  shared_ptr<Layer<Dtype> > softmax_loss_layer_;
+  // loss stores the output from the SoftmaxWithLossLayer
+  Blob<Dtype> softmax_loss_;
+  /// bottom vector holder used in call to the underlying SoftmaxWithLossLayer::Forward
+  vector<Blob<Dtype>*> softmax_bottom_vec_;
+  /// top vector holder used in call to the underlying SoftmaxWithLossLayer::Forward
+  vector<Blob<Dtype>*> softmax_top_vec_;
 };
 
 }  // namespace caffe
