@@ -46,18 +46,18 @@ class CenterLossLayer : public LossLayer<Dtype> {
   Blob<Dtype> distance_;
   Blob<Dtype> variation_sum_;
 
-  // lambda
-  float lambda_;
-  bool withSoftmax_;
+  // // lambda
+  // float lambda_;
+  // bool withSoftmax_;
 
-  // SoftmaxWithLossLayer to compute SoftmaxWithLoss
-  shared_ptr<Layer<Dtype> > softmax_loss_layer_;
-  // loss stores the output from the SoftmaxWithLossLayer
-  Blob<Dtype> softmax_loss_;
-  /// bottom vector holder used in call to the underlying SoftmaxWithLossLayer::Forward
-  vector<Blob<Dtype>*> softmax_bottom_vec_;
-  /// top vector holder used in call to the underlying SoftmaxWithLossLayer::Forward
-  vector<Blob<Dtype>*> softmax_top_vec_;
+  // // SoftmaxWithLossLayer to compute SoftmaxWithLoss
+  // shared_ptr<Layer<Dtype> > softmax_loss_layer_;
+  // // loss stores the output from the SoftmaxWithLossLayer
+  // Blob<Dtype> softmax_loss_;
+  // /// bottom vector holder used in call to the underlying SoftmaxWithLossLayer::Forward
+  // vector<Blob<Dtype>*> softmax_bottom_vec_;
+  // /// top vector holder used in call to the underlying SoftmaxWithLossLayer::Forward
+  // vector<Blob<Dtype>*> softmax_top_vec_;
 };
 
 }  // namespace caffe

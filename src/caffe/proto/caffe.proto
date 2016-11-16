@@ -436,9 +436,9 @@ message CenterLossParameter{
   // May be negative to index from the end (e.g., -1 for the last axis).
   optional int32 axis = 3 [default = 1];
   // use for centerLoss 
-  optional float lambdas = 4 [default = 1.0];
+  // optional float lambdas = 4 [default = 1.0];
   // whether plus SoftmaxWithLoss
-  optional bool with_softmax = 5 [default = true];
+  // optional bool with_softmax = 5 [default = true];
 }
 
 // Message that stores parameters used to apply transformation

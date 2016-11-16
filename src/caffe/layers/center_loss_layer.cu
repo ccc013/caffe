@@ -49,6 +49,16 @@ void CenterLossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   Dtype dot;
   caffe_gpu_dot(M_ * K_, distance_.gpu_data(), distance_.gpu_data(), &dot);
   Dtype loss = dot / M_ / Dtype(2);
+  // compute softmaxLoss
+  // if (withSoftmax_) {
+  //   softmax_loss_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
+  //   // lambda_ = this->layer_param_.center_loss_param().lambdas();
+  //   // get the softmaxLoss
+  //   const Dtype* softmaxLoss = softmax_loss_.gpu_data();
+  //   caffe_gpu_axpby<Dtype>(M_ * K_, Dtype(1.0), softmaxLoss, lambda_, &loss);
+  //   // loss = (*softmaxLoss) + lambda_ * loss;
+  // }
+
   top[0]->mutable_cpu_data()[0] = loss;
 }
 
@@ -61,11 +71,28 @@ void CenterLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   Compute_center_diff_gpu<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
       CAFFE_CUDA_NUM_THREADS>>>(nthreads, M_, K_, bottom[1]->gpu_data(), distance_.gpu_data(), 
                                 variation_sum_.mutable_cpu_data(), this->blobs_[0]->mutable_gpu_diff());
+  
+  // lambda_ = this->layer_param_.center_loss_param().lambdas();
+  // Dtype* centerLoss_diff = new Dtype(M_ * K_);
+  // caffe_gpu_memcpy(bottom[0]->count() * sizeof(Dtype), Dtype(0.), centerLoss_diff);
+  // Dtype* softmaxLoss_diff;
 
   if (propagate_down[0]) {
     caffe_gpu_scale(M_ * K_, top[0]->cpu_diff()[0] / M_, 
                              distance_.gpu_data(), bottom[0]->mutable_gpu_diff());
+    // caffe_gpu_scale(M_ * K_, top[0]->cpu_diff()[0] / M_, 
+    //                          distance_.gpu_data(), centerLoss_diff);
   }
+  // compute softmaxLoss
+  // if (withSoftmax_) { 
+  //   softmax_loss_layer_->Backward(softmax_top_vec_, propagate_down, softmax_bottom_vec_);
+  //   softmaxLoss_diff = bottom[0]->mutable_cpu_diff();
+  //   caffe_gpu_axpby<Dtype>(M_ * K_, Dtype(1.0), softmaxLoss_diff, lambda_, centerLoss_diff);
+  // }
+  
+  // caffe_gpu_scale(M_ * K_, Dtype(1), centerLoss_diff, bottom[0]->mutable_cpu_diff());
+  // bottom[0]->mutable_cpu_diff() = centerLoss_diff;
+
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
