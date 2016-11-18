@@ -46,7 +46,7 @@ class BipartiteGraphLossLayer : public LossLayer<Dtype>{
         const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
 
-    int outer_num;
+    int outer_num_;
     // nums of fine-gained labels
     int inner_num_fine;
     // nums of coarse class labels
@@ -66,8 +66,6 @@ class BipartiteGraphLossLayer : public LossLayer<Dtype>{
     int ignore_label_;
     // sum_multiplier is used to carry out sum using BLAS
     Blob<Dtype> sum_multiplier_fine_, sum_multiplier_coarse_;
-
-
 
 };
 
