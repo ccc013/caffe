@@ -307,7 +307,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 148 (last added: center_loss_param)
+// LayerParameter next available layer-specific ID: 149 (last added: large_margin_inner_product_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -408,6 +408,8 @@ message LayerParameter {
   optional BipartiteGraphLossParameter bipartite_graph_loss_param = 146;
   // centerLoss
   optional CenterLossParameter center_loss_param = 147;
+  // largeMargin
+  optional LargeMarginInnerProductParameter large_margin_inner_product_param = 148;
 }
 
 // triplet
@@ -439,6 +441,26 @@ message CenterLossParameter{
   // optional float lambdas = 4 [default = 1.0];
   // whether plus SoftmaxWithLoss
   // optional bool with_softmax = 5 [default = true];
+}
+
+// largeMargin
+message LargeMarginInnerProductParameter {
+  optional uint32 num_output = 1; // The number of outputs for the layer
+  optional bool bias_term = 2 [default = true]; // whether to have bias terms
+  optional FillerParameter weight_filler = 3; // The filler for the weight
+  optional FillerParameter bias_filler = 4; // The filler for the bias
+
+  // The first axis to be lumped into a single inner product computation;
+  // all preceding axes are retained in the output.
+  // May be negative to index from the end (e.g., -1 for the last axis).
+  optional int32 axis = 5 [default = 1];
+  // Specify whether to transpose the weight matrix or not.
+  // If transpose == true, any operations will be performed on the transpose
+  // of the weight matrix. The weight matrix itself is not going to be transposed
+  // but rather the transfer flag of operations will be toggled accordingly.
+  optional bool transpose = 6 [default = false];
+  optional uint32 margin = 7 [default = 1];
+  optional float lambda = 8 [default = 0];
 }
 
 // Message that stores parameters used to apply transformation
