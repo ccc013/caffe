@@ -149,10 +149,12 @@ void BipartiteGraphLossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bot
     kernel_exp<Dtype><<<CAFFE_GET_BLOCKS(count_coarse), CAFFE_CUDA_NUM_THREADS>>>(
       count_coarse, coarse_data, coarse_data);
 	
-	// compute \prod_{j=0}^m f_j = g_cj * exp(f_j), m is nums of coarse classes
+	// compute  f_j =\prod_{j=0}^m g_cj * exp(f_j), m is nums of coarse classes
 	kernel_channel_mul<Dtype><<<CAFFE_GET_BLOCKS(outer_num_ * inner_num_coarse),
       CAFFE_CUDA_NUM_THREADS>>>(outer_num_, channels_coarse, inner_num_coarse,
       coarse_label, coarse_data, coarse_data);
+    // compute exp(f_i) * f_j
+    caffe_gpu_mul(outer_num_, fine_data, coarse_data, fine_data);
 
     // sum after exp
     
