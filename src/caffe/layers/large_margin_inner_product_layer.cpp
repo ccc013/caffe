@@ -29,7 +29,7 @@ void LargeMarginInnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>&
 	// large margin param
 	std::vector<int> wx_shape(1);
 	wx_shape[0] = bottom[0]->shape(0);
-	LOG(FATAL) << "wx_shape = " << wx_shape[0] <<"\n";
+	// LOG(FATAL) << "wx_shape = " << wx_shape[0] <<"\n";
 
 	this->wx_.Reshape(wx_shape);
 	this->abs_w_.Reshape(wx_shape);
@@ -41,7 +41,7 @@ void LargeMarginInnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>&
 	std::vector<int> cos_theta_bound_shape(1);
 	this->margin = static_cast<unsigned int>(this->layer_param_.large_margin_inner_product_param().margin());
 	cos_theta_bound_shape[0] = this->margin + 1;
-	LOG(FATAL) << "cos_theta_bound_shape = " << cos_theta_bound_shape[0] << "\n";
+	// LOG(FATAL) << "cos_theta_bound_shape = " << cos_theta_bound_shape[0] << "\n";
 	this->cos_theta_bound_.Reshape(cos_theta_bound_shape);
 	for(int k=0; k <= this->margin; ++k){
 		this->cos_theta_bound_.mutable_cpu_data()[k] = std::cos(PI * k / this->margin);
@@ -57,7 +57,7 @@ void LargeMarginInnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>&
 	d_shape[1] = bottom[0]->count(axis);
 	this->dydw_.Reshape(d_shape);
 	this->dydx_.Reshape(d_shape);
-	LOG(FATAL) << "d_shape: " << d_shape[0] << ", " << d_shape[1] << "\n";
+	// LOG(FATAL) << "d_shape: " << d_shape[0] << ", " << d_shape[1] << "\n";
 
 	this->lambda = this->layer_param_.large_margin_inner_product_param().lambda();
 
@@ -71,7 +71,7 @@ void LargeMarginInnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>&
     // length K_ vector. For example, if bottom[0]'s shape is (N, C, H, W),
     // and axis == 1, N inner products with dimension CHW are performed.
   	K_ = bottom[0]->count(axis);
-  	LOG(FATAL) << "num_output = " << N_ << ", K_ = " << K_ << "\n";
+  	// LOG(FATAL) << "num_output = " << N_ << ", K_ = " << K_ << "\n";
 
   	// Check if we need to set up the weights
   	if (this->blobs_.size() > 0) {

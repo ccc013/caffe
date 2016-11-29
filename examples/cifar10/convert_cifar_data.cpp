@@ -44,7 +44,7 @@ void convert_dataset(const string& input_folder, const string& output_folder,
   train_db->Open(output_folder + "/cifar10_train_" + db_type, db::NEW);
   scoped_ptr<db::Transaction> txn(train_db->NewTransaction());
   // Data buffer
-  // int label;
+  int label;
   
   char str_buffer[kCIFARImageNBytes];
   Datum datum;
@@ -62,25 +62,25 @@ void convert_dataset(const string& input_folder, const string& output_folder,
         std::ios::in | std::ios::binary);
     CHECK(data_file) << "Unable to open train file #" << fileid + 1;
     for (int itemid = 0; itemid < kCIFARBatchSize; ++itemid) {
-      // read_image(&data_file, &label, str_buffer);
+      read_image(&data_file, &label, str_buffer);
       // multi-label
-      vector<int> labels;
-      int label;
-      string label_line;
-      // get a line of labels
-      std::getline(data_file, label_line);
-      std::istringstream iss(label_line);
-      while(iss >> label){
-        labels.push_back(label);
-      }
-      data_file.read(str_buffer, kCIFARImageNBytes);
+      // vector<int> labels;
+      // int label;
+      // string label_line;
+      // // get a line of labels
+      // std::getline(data_file, label_line);
+      // std::istringstream iss(label_line);
+      // while(iss >> label){
+      //   labels.push_back(label);
+      // }
+      // data_file.read(str_buffer, kCIFARImageNBytes);
 
-      datum.mutable_label()->Clear();
-      int size_ = labels.size();
-      for (int label_i = 0; label_i < size_; label_i++){
-        datum.add_label(labels[label_i]);
-      }
-      // datum.set_label(label);
+      // datum.mutable_label()->Clear();
+      // int size_ = labels.size();
+      // for (int label_i = 0; label_i < size_; label_i++){
+      //   datum.add_label(labels[label_i]);
+      // }
+      datum.set_label(label);
       datum.set_data(str_buffer, kCIFARImageNBytes);
       string out;
       CHECK(datum.SerializeToString(&out));
@@ -99,25 +99,25 @@ void convert_dataset(const string& input_folder, const string& output_folder,
       std::ios::in | std::ios::binary);
   CHECK(data_file) << "Unable to open test file.";
   for (int itemid = 0; itemid < kCIFARBatchSize; ++itemid) {
-    // read_image(&data_file, &label, str_buffer);
-    // datum.set_label(label);
+    read_image(&data_file, &label, str_buffer);
+    datum.set_label(label);
     // multi-label
-    vector<int> labels;
-    int label;
-    string label_line;
+    // vector<int> labels;
+    // int label;
+    // string label_line;
     // get a line of labels
-    std::getline(data_file, label_line);
-    std::istringstream iss(label_line);
-    while(iss >> label){
-      labels.push_back(label);
-    }
-    data_file.read(str_buffer, kCIFARImageNBytes);
+    // std::getline(data_file, label_line);
+    // std::istringstream iss(label_line);
+    // while(iss >> label){
+    //   labels.push_back(label);
+    // }
+    // data_file.read(str_buffer, kCIFARImageNBytes);
 
-    datum.mutable_label()->Clear();
-    int size_ = labels.size();
-    for (int label_i = 0; label_i < size_; label_i++){
-      datum.add_label(labels[label_i]);
-    }
+    // datum.mutable_label()->Clear();
+    // int size_ = labels.size();
+    // for (int label_i = 0; label_i < size_; label_i++){
+    //   datum.add_label(labels[label_i]);
+    // }
 
     datum.set_data(str_buffer, kCIFARImageNBytes);
     string out;

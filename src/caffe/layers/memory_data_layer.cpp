@@ -16,16 +16,16 @@ void MemoryDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   height_ = this->layer_param_.memory_data_param().height();
   width_ = this->layer_param_.memory_data_param().width();
   // multi label
-  label_size_ = this->layer_param_.memory_data_param().label_size();
+  // label_size_ = this->layer_param_.memory_data_param().label_size();
   size_ = channels_ * height_ * width_;
   CHECK_GT(batch_size_ * size_, 0) <<
       "batch_size, channels, height, and width must be specified and"
       " positive in memory_data_param";
 
-  //vector<int> label_shape(1, batch_size_);
+  vector<int> label_shape(1, batch_size_);
   // multi label
-  vector<int> label_shape(2, batch_size_); 
-  label_shape[1] = label_size_;
+  // vector<int> label_shape(2, batch_size_); 
+  // label_shape[1] = label_size_;
 
   top[0]->Reshape(batch_size_, channels_, height_, width_);
   top[1]->Reshape(label_shape);
@@ -47,19 +47,19 @@ void MemoryDataLayer<Dtype>::AddDatumVector(const vector<Datum>& datum_vector) {
       "The added data must be a multiple of the batch size.";
   added_data_.Reshape(num, channels_, height_, width_);
   // multi label
-  label_size_ = this->layer_param_.memory_data_param().label_size();
-  added_label_.Reshape(num, label_size_, 1, 1);
+  // label_size_ = this->layer_param_.memory_data_param().label_size();
+  added_label_.Reshape(num, 1, 1, 1);
   // Apply data transformations (mirror, scale, crop...)
   this->data_transformer_->Transform(datum_vector, &added_data_);
   // Copy Labels
   Dtype* top_label = added_label_.mutable_cpu_data();
   for (int item_id = 0; item_id < num; ++item_id) {
   	// multi label
-  	int label_size = datum_vector[item_id].label_size();
-  	for(int label_id = 0; label_id < label_size_; label_id++){
-    	top_label[item_id * label_size + label_id] = datum_vector[item_id].label(label_id);
-	}
-    //top_label[item_id] = datum_vector[item_id].label();
+ //  	int label_size = datum_vector[item_id].label_size();
+ //  	for(int label_id = 0; label_id < label_size_; label_id++){
+ //    	top_label[item_id * label_size + label_id] = datum_vector[item_id].label(label_id);
+	// }
+    top_label[item_id] = datum_vector[item_id].label();
   }
   // num_images == batch_size_
   Dtype* top_data = added_data_.mutable_cpu_data();
@@ -78,8 +78,8 @@ void MemoryDataLayer<Dtype>::AddMatVector(const vector<cv::Mat>& mat_vector,
   CHECK_EQ(num % batch_size_, 0) <<
       "The added data must be a multiple of the batch size.";
   // multi label
-  CHECK_EQ(label_size_, labels.size()/num) <<
-  	  "The label size for input and prototxt setting is not match.";
+  // CHECK_EQ(label_size_, labels.size()/num) <<
+  	  // "The label size for input and prototxt setting is not match.";
 
   added_data_.Reshape(num, channels_, height_, width_);
   added_label_.Reshape(num, 1, 1, 1);
@@ -89,9 +89,10 @@ void MemoryDataLayer<Dtype>::AddMatVector(const vector<cv::Mat>& mat_vector,
   Dtype* top_label = added_label_.mutable_cpu_data();
   for (int item_id = 0; item_id < num; ++item_id) {
   	// multi label
-  	for(int label_id = 0; label_id < label_size_; label_id++){
-    	top_label[item_id * label_size_ + label_id] = labels[item_id * label_size_ + label_id];
-	}
+  	// for(int label_id = 0; label_id < label_size_; label_id++){
+   //  	top_label[item_id * label_size_ + label_id] = labels[item_id * label_size_ + label_id];
+	  // }
+    top_label[item_id] = labels[item_id];
   }
   // num_images == batch_size_
   Dtype* top_data = added_data_.mutable_cpu_data();
@@ -123,8 +124,8 @@ void MemoryDataLayer<Dtype>::set_batch_size(int new_size) {
   batch_size_ = new_size;
   added_data_.Reshape(batch_size_, channels_, height_, width_);
   // multi label
-  //added_label_.Reshape(batch_size_, 1, 1, 1);
-  added_label_.Reshape(batch_size_, label_size_, 1, 1);
+  added_label_.Reshape(batch_size_, 1, 1, 1);
+  // added_label_.Reshape(batch_size_, label_size_, 1, 1);
 }
 
 template <typename Dtype>
@@ -133,11 +134,13 @@ void MemoryDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   CHECK(data_) << "MemoryDataLayer needs to be initalized by calling Reset";
   top[0]->Reshape(batch_size_, channels_, height_, width_);
   // multi label
-  //top[1]->Reshape(batch_size_, 1, 1, 1);
-  top[1]->Reshape(batch_size_, label_size_, 1, 1);
+  top[1]->Reshape(batch_size_, 1, 1, 1);
+  // top[1]->Reshape(batch_size_, label_size_, 1, 1);
 
   top[0]->set_cpu_data(data_ + pos_ * size_);
+  // multi label
   top[1]->set_cpu_data(labels_ + pos_);
+  // top[1]->set_cpu_data(labels_ + pos_ * label_size_);
   pos_ = (pos_ + batch_size_) % n_;
   if (pos_ == 0)
     has_new_data_ = false;

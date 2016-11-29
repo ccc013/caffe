@@ -28,13 +28,17 @@ class MemoryDataLayerTest : public MultiDeviceTest<TypeParam> {
     channels_ = 4;
     height_ = 7;
     width_ = 11;
+    // multi label
+    // label_size_ = 5;
     blob_top_vec_.push_back(data_blob_);
     blob_top_vec_.push_back(label_blob_);
     // pick random input data
     FillerParameter filler_param;
     GaussianFiller<Dtype> filler(filler_param);
     data_->Reshape(batches_ * batch_size_, channels_, height_, width_);
+    // multilabel
     labels_->Reshape(batches_ * batch_size_, 1, 1, 1);
+    // labels_->Reshape(batches_ * batch_size_, label_size_, 1, 1);
     filler.Fill(this->data_);
     filler.Fill(this->labels_);
   }
@@ -50,6 +54,8 @@ class MemoryDataLayerTest : public MultiDeviceTest<TypeParam> {
   int channels_;
   int height_;
   int width_;
+  // multi label
+  // int label_size_;
   // we don't really need blobs for the input data, but it makes it
   //  easier to call Filler
   Blob<Dtype>* const data_;
@@ -72,6 +78,9 @@ TYPED_TEST(MemoryDataLayerTest, TestSetup) {
   md_param->set_channels(this->channels_);
   md_param->set_height(this->height_);
   md_param->set_width(this->width_);
+  // multi label
+  // md_param->set_label_size(this->label_size_);
+
   shared_ptr<Layer<Dtype> > layer(
       new MemoryDataLayer<Dtype>(layer_param));
   layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -95,13 +104,18 @@ TYPED_TEST(MemoryDataLayerTest, TestForward) {
   md_param->set_channels(this->channels_);
   md_param->set_height(this->height_);
   md_param->set_width(this->width_);
+  // multi label
+  // md_param->set_label_size(this->label_size_);
+
   shared_ptr<MemoryDataLayer<Dtype> > layer(
       new MemoryDataLayer<Dtype>(layer_param));
   layer->DataLayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  // inialize data_ and label_, test Reset() function
   layer->Reset(this->data_->mutable_cpu_data(),
       this->labels_->mutable_cpu_data(), this->data_->num());
   for (int i = 0; i < this->batches_ * 6; ++i) {
     int batch_num = i % this->batches_;
+    // inialize data_blob_ and label_blob_, test Forward() function
     layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     for (int j = 0; j < this->data_blob_->count(); ++j) {
       EXPECT_EQ(this->data_blob_->cpu_data()[j],

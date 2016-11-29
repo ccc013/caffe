@@ -29,7 +29,7 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   const int new_width  = this->layer_param_.image_data_param().new_width();
   const bool is_color  = this->layer_param_.image_data_param().is_color();
   // multi label
-  const int label_size = this->layer_param_.image_data_param().label_size();
+  // const int label_size = this->layer_param_.image_data_param().label_size();
 
   string root_folder = this->layer_param_.image_data_param().root_folder();
 
@@ -41,24 +41,24 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   LOG(INFO) << "Opening file " << source;
   std::ifstream infile(source.c_str());
   string filename;
-  /*
+  
   int label;
   while (infile >> filename >> label) {
     lines_.push_back(std::make_pair(filename, label));
   }
-  */
+  
   // multi label
-  std::string line;
-  while(std::getline(infile, line)){
-    int label;
-    std::istringstream iss(line);
-    iss >> filename;
-    std::vector<int> labels;
-    while(iss >> label){
-      labels.push_back(label);
-    }
-    lines_.push_back(std::make_pair(filename, labels));
-  }
+  // std::string line;
+  // while(std::getline(infile, line)){
+  //   int label;
+  //   std::istringstream iss(line);
+  //   iss >> filename;
+  //   std::vector<int> labels;
+  //   while(iss >> label){
+  //     labels.push_back(label);
+  //   }
+  //   lines_.push_back(std::make_pair(filename, labels));
+  // }
 
   if (this->layer_param_.image_data_param().shuffle()) {
     // randomly shuffle data
@@ -98,20 +98,19 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       << top[0]->channels() << "," << top[0]->height() << ","
       << top[0]->width();
   // label
-/*
   vector<int> label_shape(1, batch_size);
   top[1]->Reshape(label_shape);
   for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
     this->prefetch_[i].label_.Reshape(label_shape);
   }
-  */
+  
   // multi label
-  vector<int> label_shape(2, batch_size);
-  label_shape[1] = label_size;
-  top[1]->Reshape(label_shape);
-  for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
-    this->prefetch_[i].label_.Reshape(label_shape);
-  }
+  // vector<int> label_shape(2, batch_size);
+  // label_shape[1] = label_size;
+  // top[1]->Reshape(label_shape);
+  // for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
+  //   this->prefetch_[i].label_.Reshape(label_shape);
+  // }
 }
 
 template <typename Dtype>
@@ -137,7 +136,7 @@ void ImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   const int new_width = image_data_param.new_width();
   const bool is_color = image_data_param.is_color();
   // multi label
-  const int label_size = this->layer_param_.image_data_param().label_size();
+  // const int label_size = this->layer_param_.image_data_param().label_size();
 
   string root_folder = image_data_param.root_folder();
 
@@ -173,13 +172,13 @@ void ImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     this->data_transformer_->Transform(cv_img, &(this->transformed_data_));
     trans_time += timer.MicroSeconds();
 
-    // prefetch_label[item_id] = lines_[lines_id_].second;
+    prefetch_label[item_id] = lines_[lines_id_].second;
     // multi label
-    CHECK_EQ(label_size, lines_[lines_id_].second.size()) <<
-    	"The input label size is not match the prototxt setting";
-    for(int label_id = 0; label_id < label_size; label_id++){
-    	prefetch_label[item_id * label_size  + label_id] = lines_[lines_id_].second[label_id];
-    }
+    // CHECK_EQ(label_size, lines_[lines_id_].second.size()) <<
+    // 	"The input label size is not match the prototxt setting";
+    // for(int label_id = 0; label_id < label_size; label_id++){
+    // 	prefetch_label[item_id * label_size  + label_id] = lines_[lines_id_].second[label_id];
+    // }
 
     // go to the next iter
     lines_id_++;

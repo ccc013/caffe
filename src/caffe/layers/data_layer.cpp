@@ -42,7 +42,6 @@ void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       << top[0]->channels() << "," << top[0]->height() << ","
       << top[0]->width();
   // label
-  /*
   if (this->output_labels_) {
     vector<int> label_shape(1, batch_size);
     top[1]->Reshape(label_shape);
@@ -50,16 +49,15 @@ void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       this->prefetch_[i].label_.Reshape(label_shape);
     }
   }
-  */
   // multiLabel
-  if(this->output_labels_){
-  	vector<int> label_shape(2, batch_size);
-  	label_shape[1] = datum.label_size();
-  	top[1]->Reshape(label_shape);
-  	for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
-      this->prefetch_[i].label_.Reshape(label_shape);
-    }
-  }
+  // if(this->output_labels_){
+  // 	vector<int> label_shape(2, batch_size);
+  // 	label_shape[1] = datum.label_size();
+  // 	top[1]->Reshape(label_shape);
+  // 	for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
+  //     this->prefetch_[i].label_.Reshape(label_shape);
+  //   }
+  // }
 }
 
 // This function is called on prefetch thread
@@ -101,17 +99,16 @@ void DataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     this->transformed_data_.set_cpu_data(top_data + offset);
     this->data_transformer_->Transform(datum, &(this->transformed_data_));
     // Copy label.
-    /*
     if (this->output_labels_) {
       top_label[item_id] = datum.label();
     }
-    */
+    
     // multiLabel
-    if (this->output_labels_) {
-    	for(int label_i = 0; label_i < datum.label_size(); label_i++){
-    		top_label[item_id * datum.label_size() + label_i] = datum.label(label_i);
-    	}
-    }
+    // if (this->output_labels_) {
+    // 	for(int label_i = 0; label_i < datum.label_size(); label_i++){
+    // 		top_label[item_id * datum.label_size() + label_i] = datum.label(label_i);
+    // 	}
+    // }
     trans_time += timer.MicroSeconds();
 
     reader_.free().push(const_cast<Datum*>(&datum));

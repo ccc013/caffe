@@ -108,7 +108,7 @@ void convert_dataset(const char* image_filename, const char* label_filename,
   }
 
   // Storing to db
-  // char label;
+  char label;
   char* pixels = new char[rows * cols];
   int count = 0;
   string value;
@@ -122,24 +122,24 @@ void convert_dataset(const char* image_filename, const char* label_filename,
   for (int item_id = 0; item_id < num_items; ++item_id) {
     image_file.read(pixels, rows * cols);
     // multi-label
-    vector<int> labels;
-    int label;
-    string label_line;
-    // get a line of labels
-    std::getline(label_file, label_line);
-    std::istringstream iss(label_line);
-    while(iss >> label){
-      labels.push_back(label);
-    }
-    // label_file.read(&label, 1);
+    // vector<int> labels;
+    // int label;
+    // string label_line;
+    // // get a line of labels
+    // std::getline(label_file, label_line);
+    // std::istringstream iss(label_line);
+    // while(iss >> label){
+    //   labels.push_back(label);
+    // }
+    label_file.read(&label, 1);
     datum.set_data(pixels, rows*cols);
-    // datum.set_label(label);
+    datum.set_label(label);
     // multi-label
-    datum.mutable_label()->Clear();
-    int size_ = labels.size();
-    for ( int label_i = 0; label_i < size_; label_i++){
-      datum.add_label(labels[label_i]);
-    }
+    // datum.mutable_label()->Clear();
+    // int size_ = labels.size();
+    // for ( int label_i = 0; label_i < size_; label_i++){
+    //   datum.add_label(labels[label_i]);
+    // }
 
     string key_str = caffe::format_int(item_id, 8);
     datum.SerializeToString(&value);
