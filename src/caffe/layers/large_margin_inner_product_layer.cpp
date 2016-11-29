@@ -27,7 +27,7 @@ void LargeMarginInnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>&
 	const int axis = bottom[0]->CanonicalAxisIndex(
 		this->layer_param_.large_margin_inner_product_param().axis());
 	// large margin param
-	std::vector<<int> wx_shape(1);
+	std::vector<int> wx_shape(1);
 	wx_shape[0] = bottom[0]->shape(0);
 	LOG(FATAL) << "wx_shape = " << wx_shape[0] <<"\n";
 
@@ -38,7 +38,7 @@ void LargeMarginInnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>&
 	this->cos_t_.Reshape(wx_shape);
 	this->cos_mt_.Reshape(wx_shape);
 
-	std::vector<<int> cos_theta_bound_shape(1);
+	std::vector<int> cos_theta_bound_shape(1);
 	this->margin = static_cast<unsigned int>(this->layer_param_.large_margin_inner_product_param().margin());
 	cos_theta_bound_shape[0] = this->margin + 1;
 	LOG(FATAL) << "cos_theta_bound_shape = " << cos_theta_bound_shape[0] << "\n";
@@ -131,7 +131,7 @@ void LargeMarginInnerProductLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bo
 }
 
 template <typename Dtype>
-void LargeMarginInnerProductLayer<Dtype>::Foward_cpu(const vector<Blob<Dtype>*>& bottom,
+void LargeMarginInnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 	// not implement
 }
