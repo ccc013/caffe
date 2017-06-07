@@ -131,7 +131,8 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     for (int i = 0; i < outer_num_; ++i) {
       for (int j = 0; j < inner_num_; ++j) {
         const int label_value = static_cast<int>(label[i * inner_num_ + j]);
-        if (has_ignore_label_ && label_value == ignore_label_) {
+        // modified for incremental train
+        if (has_ignore_label_ && label_value != ignore_label_) {
           for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
             bottom_diff[i * dim + c * inner_num_ + j] = 0;
           }
@@ -139,6 +140,14 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
           bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;
           ++count;
         }
+        // if (has_ignore_label_ && label_value == ignore_label_) {
+        //   for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
+        //     bottom_diff[i * dim + c * inner_num_ + j] = 0;
+        //   }
+        // } else {
+        //   bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;
+        //   ++count;
+        // }
       }
     }
     // Scale gradient
